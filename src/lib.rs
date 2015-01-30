@@ -18,19 +18,27 @@ pub fn plugin_registrar(reg: &mut Registry) {
 
 struct CallCModifier;
 
+#[cfg(target_os="windows")]
+fn is_windows() -> bool { true }
+
+#[cfg(not(target_os="windows"))]
+fn is_windows() -> bool { false }
+
 impl ItemModifier for CallCModifier {
     fn expand(&self, ecx: &mut ExtCtxt, span: Span, meta_item: &MetaItem, item: AstPtr<Item>) -> AstPtr<Item> {
-        item.map(move |from| if let ast::ItemFn(decl, unsafety, _, generics, block) = from.node {
-            Item {
-                ident: from.ident,
-                attrs: from.attrs,
-                id: from.id,
-                node: ast::ItemFn(decl, unsafety, syntax::abi::Stdcall, generics, block),
-                vis: from.vis,
-                span: from.span
-            }
-        } else {
-            from
-        })
+        if is_windows() {
+            item.map(move |from| if let ast::ItemFn(decl, unsafety, _, generics, block) = from.node {
+                Item {
+                    ident: from.ident,
+                    attrs: from.attrs,
+                    id: from.id,
+                    node: ast::ItemFn(decl, unsafety, syntax::abi::Stdcall, generics, block),
+                    vis: from.vis,
+                    span: from.span
+                }
+            } else {
+                from
+            })
+        } else { item }
     }
 }
