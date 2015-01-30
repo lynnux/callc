@@ -1,0 +1,7 @@
+[package]
+
+name = "callc"
+version = "0.0.1"
+authors = ["Dylan Ede <dylanede@googlemail.com>"]
+
+plugin="true"
