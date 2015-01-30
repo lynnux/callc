@@ -1,4 +1,4 @@
-#![feature(plugin_registrar, box_syntax, rustc_private)]
+#![feature(plugin_registrar, box_syntax, rustc_private, core)]
 
 extern crate rustc;
 extern crate syntax;
@@ -11,22 +11,31 @@ use rustc::plugin::Registry;
 use syntax::ptr::P as AstPtr;
 use syntax::codemap::Span;
 
-#[plugin_registrar]
-pub fn plugin_registrar(reg: &mut Registry) {
-    reg.register_syntax_extension(token::intern("stdcall_win"), Modifier(box CallCModifier));
+#[derive(PartialEq, Eq)]
+enum Platform {
+    Windows,
+    Mac,
+    Linux
 }
 
-struct CallCModifier;
+#[plugin_registrar]
+pub fn plugin_registrar(reg: &mut Registry) {
+    let platform = match &reg.sess.target.target.target_os[] {
+        "windows" => Platform::Windows,
+        "macos" => Platform::Mac,
+        "linux" => Platform::Linux,
+        other => panic!("Sorry, platform \"{}\" is not supported by cef-sys.", other)
+    };
+    reg.register_syntax_extension(token::intern("stdcall_win"), Modifier(box CallCModifier{ platform: platform }));
+}
 
-#[cfg(target_os="windows")]
-fn is_windows() -> bool { true }
-
-#[cfg(not(target_os="windows"))]
-fn is_windows() -> bool { false }
+struct CallCModifier {
+    platform: Platform
+}
 
 impl ItemModifier for CallCModifier {
     fn expand(&self, ecx: &mut ExtCtxt, span: Span, meta_item: &MetaItem, item: AstPtr<Item>) -> AstPtr<Item> {
-        if is_windows() {
+        if self.platform == Platform::Windows {
             item.map(move |from| if let ast::ItemFn(decl, unsafety, _, generics, block) = from.node {
                 Item {
                     ident: from.ident,
