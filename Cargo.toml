@@ -1,10 +1,12 @@
 [package]
-
 name = "callc"
 version = "0.0.1"
 authors = ["Dylan Ede <dylanede@googlemail.com>"]
 
 [lib]
 name = "callc"
-crate-type = ["dylib"]
-plugin = true
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+syn = {version = "1.0", features =["full"]}
